@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: API Biblioteca Digital
+  version: 1.0.0
+  description: API para consulta e gerenciamento de livros
+servers:
+  - url: http://localhost:3000
+paths:
+  /livros:
+    get:
+      tags:
+        - Livros
+      summary: Lista todos os livros
+      parameters:
+        - in: query
+          name: autor
+          schema:
+            type: string
+          description: Filtrar por nome do autor
+        - in: query
+          name: disponivel
+          schema:
+            type: boolean
+          description: Filtrar por disponibilidade
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Página para paginação
+        - in: query
+          name: size
+          schema:
+            type: integer
+          description: Tamanho da página
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Campo para ordenação
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Ordem de ordenação
+      responses:
+        '200':
+          description: Lista de livros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Livro'
+    post:
+      tags:
+        - Livros
+      summary: Cria um novo livro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivroInput'
+      responses:
+        '201':
+          description: Livro criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  _links:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Link'
+  /livros/{id}:
+    get:
+      tags:
+        - Livros
+      summary: Obtém um livro pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Livro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livro'
+        '404':
+          description: Livro não encontrado
+    put:
+      tags:
+        - Livros
+      summary: Atualiza um livro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivroInput'
+      responses:
+        '200':
+          description: Livro atualizado
+    delete:
+      tags:
+        - Livros
+      summary: Remove um livro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Livro removido
+tags:
+  - name: Livros
+components:
+  schemas:
+    Autor:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+    Livro:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        isbn:
+          type: string
+        ano_publicacao:
+          type: integer
+        disponivel:
+          type: boolean
+        autor:
+          $ref: '#/components/schemas/Autor'
+        _links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+    LivroInput:
+      type: object
+      required:
+        - titulo
+        - isbn
+        - ano_publicacao
+        - autor_id
+      properties:
+        titulo:
+          type: string
+        isbn:
+          type: string
+        ano_publicacao:
+          type: integer
+        disponivel:
+          type: boolean
+        autor_id:
+          type: integer
+    Link:
+      type: object
+      properties:
+        rel:
+          type: string
+        href:
+          type: string
+        method:
+          type: string
