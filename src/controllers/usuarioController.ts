@@ -33,8 +33,11 @@ export const criarUsuario = async (req: Request, res: Response) => {
     }
     const result = await pool.query('INSERT INTO usuarios (nome, email) VALUES ($1, $2) RETURNING id, nome, email', [nome, email]);
     res.status(201).json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23502') {
+      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
     res.status(500).json({ erro: 'Erro ao criar usuário' });
   }
 };
@@ -51,8 +54,11 @@ export const atualizarUsuario = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: 'Usuário não encontrado' });
     }
     res.status(200).json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23502') {
+      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
     res.status(500).json({ erro: 'Erro ao atualizar usuário' });
   }
 };

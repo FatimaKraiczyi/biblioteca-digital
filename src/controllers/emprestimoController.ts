@@ -54,8 +54,11 @@ export const criarEmprestimo = async (req: Request, res: Response) => {
     // Atualiza o livro para indisponível
     await pool.query('UPDATE livros SET disponivel = FALSE WHERE id = $1', [livro_id]);
     res.status(201).json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23502') {
+      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
     res.status(500).json({ erro: 'Erro ao criar empréstimo' });
   }
 };

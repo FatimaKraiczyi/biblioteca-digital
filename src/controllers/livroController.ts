@@ -156,6 +156,15 @@ export const atualizarLivro = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { titulo, isbn, ano_publicacao, disponivel, autor_id } = req.body;
+    // Validação dos campos obrigatórios
+    if (!titulo || !isbn || !ano_publicacao || autor_id === undefined) {
+      return res.status(400).json({
+        erro: "Campos obrigatórios ausentes (titulo, isbn, ano_publicacao, autor_id)",
+        codigo: 400,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
     const result = await pool.query(
       `UPDATE livros SET titulo=$1, isbn=$2, ano_publicacao=$3, disponivel=$4, autor_id=$5 WHERE id=$6 RETURNING *`,
       [titulo, isbn, ano_publicacao, disponivel, autor_id, id]
@@ -174,8 +183,18 @@ export const atualizarLivro = async (req: Request, res: Response) => {
         { rel: "self", href: `/livros/${id}`, method: "GET" }
       ]
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    // Tratamento para evitar queda da API em erro de conexão
+    if (err.code === '23502') {
+      return res.status(400).json({
+        erro: "Dados inválidos: algum campo obrigatório está nulo.",
+        codigo: 400,
+        detalhe: err.detail,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
     res.status(500).json({
       erro: "Erro ao atualizar livro",
       codigo: 500,

@@ -33,8 +33,11 @@ export const criarAutor = async (req: Request, res: Response) => {
     }
     const result = await pool.query('INSERT INTO autores (nome) VALUES ($1) RETURNING id, nome', [nome]);
     res.status(201).json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23502') {
+      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
     res.status(500).json({ erro: 'Erro ao criar autor' });
   }
 };
@@ -51,8 +54,11 @@ export const atualizarAutor = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: 'Autor não encontrado' });
     }
     res.status(200).json(result.rows[0]);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23502') {
+      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
     res.status(500).json({ erro: 'Erro ao atualizar autor' });
   }
 };
