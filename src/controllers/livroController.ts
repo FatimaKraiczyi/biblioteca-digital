@@ -62,6 +62,7 @@ export const listarLivros = async (req: Request, res: Response) => {
     }));
     res.status(200).json(livros);
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       erro: "Erro ao listar livros",
       codigo: 500,
@@ -108,6 +109,7 @@ export const obterLivro = async (req: Request, res: Response) => {
     };
     res.status(200).json(livro);
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       erro: "Erro ao obter livro",
       codigo: 500,
@@ -140,6 +142,7 @@ export const criarLivro = async (req: Request, res: Response) => {
       ]
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       erro: "Erro ao criar livro",
       codigo: 500,
@@ -172,6 +175,7 @@ export const atualizarLivro = async (req: Request, res: Response) => {
       ]
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       erro: "Erro ao atualizar livro",
       codigo: 500,
@@ -195,6 +199,7 @@ export const removerLivro = async (req: Request, res: Response) => {
     }
     res.status(204).send();
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       erro: "Erro ao remover livro",
       codigo: 500,
