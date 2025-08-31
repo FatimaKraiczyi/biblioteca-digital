@@ -29,16 +29,64 @@ export const criarUsuario = async (req: Request, res: Response) => {
   try {
     const { nome, email } = req.body;
     if (!nome || !email) {
-      return res.status(400).json({ erro: 'Nome e email são obrigatórios' });
+      return res.status(400).json({ 
+        erro: 'Nome e email são obrigatórios',
+        codigo: 400,
+        timestamp: new Date().toISOString()
+      });
     }
-    const result = await pool.query('INSERT INTO usuarios (nome, email) VALUES ($1, $2) RETURNING id, nome, email', [nome, email]);
-    res.status(201).json(result.rows[0]);
+
+    // Validação básica de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        erro: 'Formato de email inválido',
+        codigo: 400,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Verifica se já existe usuário com o mesmo email
+    const usuarioExistente = await pool.query('SELECT id FROM usuarios WHERE LOWER(email) = LOWER($1)', [email]);
+    if (usuarioExistente?.rowCount && usuarioExistente.rowCount > 0) {
+      return res.status(409).json({ 
+        erro: 'Já existe um usuário cadastrado com este email',
+        codigo: 409,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const result = await pool.query(
+      'INSERT INTO usuarios (nome, email) VALUES ($1, $2) RETURNING id, nome, email', 
+      [nome.trim(), email.toLowerCase()]
+    );
+    
+    res.status(201).json({
+      ...result.rows[0],
+      mensagem: 'Usuário criado com sucesso'
+    });
   } catch (err: any) {
     console.error(err);
     if (err.code === '23502') {
-      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+      return res.status(400).json({ 
+        erro: 'Dados inválidos: algum campo obrigatório está nulo.',
+        detalhe: err.detail,
+        codigo: 400,
+        timestamp: new Date().toISOString()
+      });
     }
-    res.status(500).json({ erro: 'Erro ao criar usuário' });
+    if (err.code === '23505') {
+      return res.status(409).json({ 
+        erro: 'Já existe um usuário cadastrado com este email.',
+        codigo: 409,
+        timestamp: new Date().toISOString()
+      });
+    }
+    res.status(500).json({ 
+      erro: 'Erro ao criar usuário',
+      codigo: 500,
+      timestamp: new Date().toISOString()
+    });
   }
 };
 

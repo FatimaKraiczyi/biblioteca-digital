@@ -31,14 +31,45 @@ export const criarAutor = async (req: Request, res: Response) => {
     if (!nome) {
       return res.status(400).json({ erro: 'Nome do autor é obrigatório' });
     }
-    const result = await pool.query('INSERT INTO autores (nome) VALUES ($1) RETURNING id, nome', [nome]);
-    res.status(201).json(result.rows[0]);
+    
+    // Normaliza o nome (remove espaços extras e capitaliza palavras)
+    const nomeNormalizado = nome
+      .trim()
+      .replace(/\s+/g, ' ')
+      .split(' ')
+      .map((palavra: string) => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+      .join(' ');
+
+    // Verifica se já existe autor com o mesmo nome
+    const autorExistente = await pool.query('SELECT id FROM autores WHERE LOWER(nome) = LOWER($1)', [nomeNormalizado]);
+    if (autorExistente?.rowCount && autorExistente.rowCount > 0) {
+      return res.status(409).json({ 
+        erro: 'Já existe um autor cadastrado com este nome',
+        codigo: 409,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const result = await pool.query('INSERT INTO autores (nome) VALUES ($1) RETURNING id, nome', [nomeNormalizado]);
+    res.status(201).json({
+      ...result.rows[0],
+      mensagem: 'Autor criado com sucesso'
+    });
   } catch (err: any) {
     console.error(err);
     if (err.code === '23502') {
-      return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+      return res.status(400).json({ 
+        erro: 'Dados inválidos: algum campo obrigatório está nulo.',
+        detalhe: err.detail,
+        codigo: 400,
+        timestamp: new Date().toISOString()
+      });
     }
-    res.status(500).json({ erro: 'Erro ao criar autor' });
+    res.status(500).json({ 
+      erro: 'Erro ao criar autor',
+      codigo: 500,
+      timestamp: new Date().toISOString()
+    });
   }
 };
 

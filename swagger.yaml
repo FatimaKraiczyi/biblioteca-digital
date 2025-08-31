@@ -24,6 +24,11 @@ paths:
       tags:
         - Usuários
       summary: Cria um novo usuário
+      description: |
+        Cria um novo usuário com as seguintes validações:
+        - Nome e email são obrigatórios
+        - Email deve ter formato válido
+        - Email não pode ser duplicado (case-insensitive)
       requestBody:
         required: true
         content:
@@ -32,11 +37,51 @@ paths:
               $ref: '#/components/schemas/UsuarioInput'
       responses:
         '201':
-          description: Usuário criado
+          description: Usuário criado com sucesso
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                allOf:
+                  - $ref: '#/components/schemas/Usuario'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Usuário criado com sucesso'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Nome e email são obrigatórios'
+                      - 'Formato de email inválido'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: Email duplicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um usuário cadastrado com este email'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time
   /usuarios/{id}:
     get:
       tags:
@@ -113,6 +158,12 @@ paths:
       tags:
         - Empréstimos
       summary: Cria um novo empréstimo
+      description: |
+        Cria um novo empréstimo verificando as seguintes regras:
+        - Usuário não pode ter mais de 3 empréstimos simultâneos
+        - Usuário não pode ter empréstimos em atraso (mais de 15 dias)
+        - Livro deve estar disponível
+        - Prazo de devolução é de 15 dias
       requestBody:
         required: true
         content:
@@ -121,17 +172,70 @@ paths:
               $ref: '#/components/schemas/EmprestimoInput'
       responses:
         '201':
-          description: Empréstimo criado
+          description: Empréstimo criado com sucesso
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Emprestimo'
+                allOf:
+                  - $ref: '#/components/schemas/Emprestimo'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Empréstimo realizado com sucesso'
         '400':
-          description: Dados inválidos, campos obrigatórios ausentes, livro não disponível ou violação de integridade referencial
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Usuário e livro são obrigatórios'
+                      - 'Usuário possui empréstimos em atraso'
+                      - 'Usuário já atingiu o limite de 3 empréstimos simultâneos'
+                      - 'Livro não disponível para empréstimo'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
         '404':
-          description: Usuário ou livro não encontrado
+          description: Recurso não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Usuário não encontrado'
+                      - 'Livro não encontrado'
+                  codigo:
+                    type: integer
+                    example: 404
+                  timestamp:
+                    type: string
+                    format: date-time
         '500':
-          description: Erro interno ao criar empréstimo
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                  codigo:
+                    type: integer
+                    example: 500
+                  timestamp:
+                    type: string
+                    format: date-time
   /emprestimos/{id}:
     get:
       tags:
@@ -190,6 +294,11 @@ paths:
       tags:
         - Autores
       summary: Cria um novo autor
+      description: |
+        Cria um novo autor com as seguintes validações:
+        - Nome é obrigatório
+        - Nome é normalizado (espaços extras removidos e palavras capitalizadas)
+        - Não permite nomes duplicados (case-insensitive)
       requestBody:
         required: true
         content:
@@ -198,11 +307,49 @@ paths:
               $ref: '#/components/schemas/AutorInput'
       responses:
         '201':
-          description: Autor criado
+          description: Autor criado com sucesso
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Autor'
+                allOf:
+                  - $ref: '#/components/schemas/Autor'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Autor criado com sucesso'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Nome do autor é obrigatório'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: Conflito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um autor cadastrado com este nome'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time
   /autores/{id}:
     get:
       tags:
@@ -311,6 +458,13 @@ paths:
       tags:
         - Livros
       summary: Cria um novo livro
+      description: |
+        Cria um novo livro com as seguintes validações:
+        - Todos os campos obrigatórios devem ser preenchidos (título, ISBN, ano de publicação, autor_id)
+        - ISBN deve ser válido (ISBN-10 ou ISBN-13)
+        - ISBN não pode ser duplicado
+        - Ano de publicação deve estar entre 1000 e o ano atual
+        - Autor deve existir no sistema
       requestBody:
         required: true
         content:
@@ -319,7 +473,7 @@ paths:
               $ref: '#/components/schemas/LivroInput'
       responses:
         '201':
-          description: Livro criado
+          description: Livro criado com sucesso
           content:
             application/json:
               schema:
@@ -331,6 +485,57 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Link'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Campos obrigatórios ausentes (titulo, isbn, ano_publicacao, autor_id)'
+                      - 'Formato de ISBN inválido. Deve ser ISBN-10 ou ISBN-13'
+                      - 'Ano de publicação deve estar entre 1000 e o ano atual'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: Autor não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Autor não encontrado'
+                  codigo:
+                    type: integer
+                    example: 404
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: ISBN duplicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um livro cadastrado com esse ISBN'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time
   /livros/{id}:
     get:
       tags:

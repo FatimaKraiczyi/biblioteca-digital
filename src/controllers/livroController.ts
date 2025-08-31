@@ -124,16 +124,64 @@ export const criarLivro = async (req: Request, res: Response) => {
     const { titulo, isbn, ano_publicacao, disponivel, autor_id } = req.body;
     if (!titulo || !isbn || !ano_publicacao || autor_id === undefined) {
       return res.status(400).json({
-        erro: "Dados obrigatórios ausentes",
+        erro: "Campos obrigatórios ausentes (titulo, isbn, ano_publicacao, autor_id)",
         codigo: 400,
         timestamp: new Date().toISOString(),
         caminho: req.originalUrl
       });
     }
+
+    // Validação do formato do ISBN (ISBN-10 ou ISBN-13)
+    const isbnLimpo = isbn.replace(/[-\s]/g, '');
+    const isISBN10 = /^\d{9}[\dX]$/.test(isbnLimpo);
+    const isISBN13 = /^\d{13}$/.test(isbnLimpo);
+    
+    if (!isISBN10 && !isISBN13) {
+      return res.status(400).json({
+        erro: "Formato de ISBN inválido. Deve ser ISBN-10 ou ISBN-13",
+        codigo: 400,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
+
+    // Validação do ano de publicação
+    const anoAtual = new Date().getFullYear();
+    if (ano_publicacao < 1000 || ano_publicacao > anoAtual) {
+      return res.status(400).json({
+        erro: `Ano de publicação deve estar entre 1000 e ${anoAtual}`,
+        codigo: 400,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
+
+    // Verifica se o autor existe
+    const autorExiste = await pool.query('SELECT id FROM autores WHERE id = $1', [autor_id]);
+    if (!autorExiste?.rowCount || autorExiste.rowCount === 0) {
+      return res.status(404).json({
+        erro: "Autor não encontrado",
+        codigo: 404,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
+
+    // Verifica duplicidade de ISBN
+    const existe = await pool.query('SELECT id FROM livros WHERE isbn = $1', [isbnLimpo]);
+    if ((existe && existe.rowCount && existe.rowCount > 0)) {
+      return res.status(409).json({
+        erro: 'Já existe um livro cadastrado com esse ISBN',
+        codigo: 409,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO livros (titulo, isbn, ano_publicacao, disponivel, autor_id)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`, 
-      [titulo, isbn, ano_publicacao, disponivel ?? true, autor_id]
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [titulo.trim(), isbnLimpo, ano_publicacao, disponivel ?? true, autor_id]
     );
     res.status(201).json({
       id: result.rows[0].id,
@@ -141,8 +189,20 @@ export const criarLivro = async (req: Request, res: Response) => {
         { rel: "self", href: `/livros/${result.rows[0].id}`, method: "GET" }
       ]
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.code === '23505') {
+      return res.status(409).json({ erro: 'Já existe um livro com esse ISBN (violação de UNIQUE).', detalhe: err.detail });
+    }
+    if (err.code === '23502') {
+      return res.status(400).json({
+        erro: "Dados inválidos: algum campo obrigatório está nulo.",
+        codigo: 400,
+        detalhe: err.detail,
+        timestamp: new Date().toISOString(),
+        caminho: req.originalUrl
+      });
+    }
     res.status(500).json({
       erro: "Erro ao criar livro",
       codigo: 500,
