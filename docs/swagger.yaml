@@ -85,3 +85,622 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
+  /usuarios/{id}:
+    get:
+      tags:
+        - Usuários
+      summary: Obtém um usuário pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuário não encontrado
+    put:
+      tags:
+        - Usuários
+      summary: Atualiza um usuário
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuário não encontrado
+    delete:
+      tags:
+        - Usuários
+      summary: Remove um usuário
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Usuário removido
+  /emprestimos:
+    get:
+      tags:
+        - Empréstimos
+      summary: Lista todos os empréstimos
+      responses:
+        '200':
+          description: Lista de empréstimos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Emprestimo'
+    post:
+      tags:
+        - Empréstimos
+      summary: Cria um novo empréstimo
+      description: |
+        Cria um novo empréstimo verificando as seguintes regras:
+        - Usuário não pode ter mais de 3 empréstimos simultâneos
+        - Usuário não pode ter empréstimos em atraso (mais de 15 dias)
+        - Livro deve estar disponível
+        - Prazo de devolução é de 15 dias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmprestimoInput'
+      responses:
+        '201':
+          description: Empréstimo criado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Emprestimo'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Empréstimo realizado com sucesso'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Usuário e livro são obrigatórios'
+                      - 'Usuário possui empréstimos em atraso'
+                      - 'Usuário já atingiu o limite de 3 empréstimos simultâneos'
+                      - 'Livro não disponível para empréstimo'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: Recurso não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Usuário não encontrado'
+                      - 'Livro não encontrado'
+                  codigo:
+                    type: integer
+                    example: 404
+                  timestamp:
+                    type: string
+                    format: date-time
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                  codigo:
+                    type: integer
+                    example: 500
+                  timestamp:
+                    type: string
+                    format: date-time
+  /emprestimos/{id}:
+    get:
+      tags:
+        - Empréstimos
+      summary: Obtém um empréstimo pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Empréstimo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Emprestimo'
+        '404':
+          description: Empréstimo não encontrado
+        '500':
+          description: Erro interno ao obter empréstimo
+  /emprestimos/{id}/devolucao:
+    put:
+      tags:
+        - Empréstimos
+      summary: Devolve um livro emprestado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Livro devolvido com sucesso
+        '404':
+          description: Empréstimo não encontrado
+        '500':
+          description: Erro interno ao devolver empréstimo
+  /autores:
+    get:
+      tags:
+        - Autores
+      summary: Lista todos os autores
+      responses:
+        '200':
+          description: Lista de autores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Autor'
+    post:
+      tags:
+        - Autores
+      summary: Cria um novo autor
+      description: |
+        Cria um novo autor com as seguintes validações:
+        - Nome é obrigatório
+        - Nome é normalizado (espaços extras removidos e palavras capitalizadas)
+        - Não permite nomes duplicados (case-insensitive)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutorInput'
+      responses:
+        '201':
+          description: Autor criado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Autor'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Autor criado com sucesso'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Nome do autor é obrigatório'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: Conflito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um autor cadastrado com este nome'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time
+  /autores/{id}:
+    get:
+      tags:
+        - Autores
+      summary: Obtém um autor pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Autor encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Autor'
+        '404':
+          description: Autor não encontrado
+    put:
+      tags:
+        - Autores
+      summary: Atualiza um autor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutorInput'
+      responses:
+        '200':
+          description: Autor atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Autor'
+        '404':
+          description: Autor não encontrado
+    delete:
+      tags:
+        - Autores
+      summary: Remove um autor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Autor removido
+  /livros:
+    get:
+      tags:
+        - Livros
+      summary: Lista todos os livros
+      parameters:
+        - in: query
+          name: autor
+          schema:
+            type: string
+          description: Filtrar por nome do autor
+        - in: query
+          name: disponivel
+          schema:
+            type: boolean
+          description: Filtrar por disponibilidade
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Página para paginação
+        - in: query
+          name: size
+          schema:
+            type: integer
+          description: Tamanho da página
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Campo para ordenação
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Ordem de ordenação
+      responses:
+        '200':
+          description: Lista de livros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Livro'
+    post:
+      tags:
+        - Livros
+      summary: Cria um novo livro
+      description: |
+        Cria um novo livro com as seguintes validações:
+        - Todos os campos obrigatórios devem ser preenchidos (título, ISBN, ano de publicação, autor_id)
+        - ISBN deve ser válido (ISBN-10 ou ISBN-13)
+        - ISBN não pode ser duplicado
+        - Ano de publicação deve estar entre 1000 e o ano atual
+        - Autor deve existir no sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivroInput'
+      responses:
+        '201':
+          description: Livro criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  _links:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Link'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Campos obrigatórios ausentes (titulo, isbn, ano_publicacao, autor_id)'
+                      - 'Formato de ISBN inválido. Deve ser ISBN-10 ou ISBN-13'
+                      - 'Ano de publicação deve estar entre 1000 e o ano atual'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: Autor não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Autor não encontrado'
+                  codigo:
+                    type: integer
+                    example: 404
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: ISBN duplicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um livro cadastrado com esse ISBN'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time
+  /livros/{id}:
+    get:
+      tags:
+        - Livros
+      summary: Obtém um livro pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Livro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livro'
+        '404':
+          description: Livro não encontrado
+    put:
+      tags:
+        - Livros
+      summary: Atualiza um livro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivroInput'
+      responses:
+        '200':
+          description: Livro atualizado
+    delete:
+      tags:
+        - Livros
+      summary: Remove um livro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Livro removido
+tags:
+  - name: Livros
+    description: Operações relacionadas a livros
+  - name: Autores
+    description: Operações relacionadas a autores
+components:
+  schemas:
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+    UsuarioInput:
+      type: object
+      required:
+        - nome
+        - email
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+    Emprestimo:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario_id:
+          type: integer
+        livro_id:
+          type: integer
+        data_emprestimo:
+          type: string
+          format: date
+        data_devolucao:
+          type: string
+          format: date
+        devolvido:
+          type: boolean
+    EmprestimoInput:
+      type: object
+      required:
+        - usuario_id
+        - livro_id
+      properties:
+        usuario_id:
+          type: integer
+        livro_id:
+          type: integer
+    Autor:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+    AutorInput:
+      type: object
+      required:
+        - nome
+      properties:
+        nome:
+          type: string
+    Livro:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        isbn:
+          type: string
+        ano_publicacao:
+          type: integer
+        disponivel:
+          type: boolean
+        autor:
+          $ref: '#/components/schemas/Autor'
+        _links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+    LivroInput:
+      type: object
+      required:
+        - titulo
+        - isbn
+        - ano_publicacao
+        - autor_id
+      properties:
+        titulo:
+          type: string
+        isbn:
+          type: string
+        ano_publicacao:
+          type: integer
+        disponivel:
+          type: boolean
+        autor_id:
+          type: integer
+    Link:
+      type: object
+      properties:
+        rel:
+          type: string
+        href:
+          type: string
+        method:
+          type: string
