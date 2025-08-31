@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: API Biblioteca Digital
+  version: 1.0.0
+  description: API para consulta e gerenciamento de livros - Documentação
+servers:
+  - url: https://biblioteca-digital-production.up.railway.app
+    description: Servidor de Produção
+  - url: http://localhost:3000
+    description: Servidor Local
+paths:
+  /usuarios:
+    get:
+      tags:
+        - Usuários
+      summary: Lista todos os usuários
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Usuario'
+    post:
+      tags:
+        - Usuários
+      summary: Cria um novo usuário
+      description: |
+        Cria um novo usuário com as seguintes validações:
+        - Nome e email são obrigatórios
+        - Email deve ter formato válido
+        - Email não pode ser duplicado (case-insensitive)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Usuario'
+                  - type: object
+                    properties:
+                      mensagem:
+                        type: string
+                        example: 'Usuário criado com sucesso'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    enum:
+                      - 'Nome e email são obrigatórios'
+                      - 'Formato de email inválido'
+                  codigo:
+                    type: integer
+                    example: 400
+                  timestamp:
+                    type: string
+                    format: date-time
+        '409':
+          description: Email duplicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erro:
+                    type: string
+                    example: 'Já existe um usuário cadastrado com este email'
+                  codigo:
+                    type: integer
+                    example: 409
+                  timestamp:
+                    type: string
+                    format: date-time

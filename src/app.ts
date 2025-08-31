@@ -18,9 +18,12 @@ app.use('/usuarios', usuarioRoutes);
 app.use('/emprestimos', emprestimoRoutes);
 
 // Swagger UI
-const swaggerFile = path.resolve(__dirname, '../swagger.yaml');
+const swaggerFile = path.resolve(__dirname, '../docs/swagger.yaml');
 const swaggerDocument = yaml.load(fs.readFileSync(swaggerFile, 'utf8')) as object;
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Serve o diretório docs estaticamente
+app.use(express.static(path.join(__dirname, '../docs')));
 
 app.use((req, res) => {
   res.status(404).json({
