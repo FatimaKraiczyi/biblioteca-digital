@@ -1,5 +1,6 @@
 import express from 'express';
 import livroRoutes from './routes/livroRoutes';
+import autorRoutes from './routes/autorRoutes';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
@@ -8,7 +9,9 @@ import yaml from 'js-yaml';
 const app = express();
 
 app.use(express.json());
+
 app.use('/livros', livroRoutes);
+app.use('/autores', autorRoutes);
 
 // Swagger UI
 const swaggerFile = path.resolve(__dirname, '../swagger.yaml');

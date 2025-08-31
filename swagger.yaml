@@ -6,6 +6,95 @@ info:
 servers:
   - url: http://localhost:3000
 paths:
+  /autores:
+    get:
+      tags:
+        - Autores
+      summary: Lista todos os autores
+      responses:
+        '200':
+          description: Lista de autores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Autor'
+    post:
+      tags:
+        - Autores
+      summary: Cria um novo autor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutorInput'
+      responses:
+        '201':
+          description: Autor criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Autor'
+  /autores/{id}:
+    get:
+      tags:
+        - Autores
+      summary: Obtém um autor pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Autor encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Autor'
+        '404':
+          description: Autor não encontrado
+    put:
+      tags:
+        - Autores
+      summary: Atualiza um autor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutorInput'
+      responses:
+        '200':
+          description: Autor atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Autor'
+        '404':
+          description: Autor não encontrado
+    delete:
+      tags:
+        - Autores
+      summary: Remove um autor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Autor removido
   /livros:
     get:
       tags:
@@ -130,6 +219,9 @@ paths:
           description: Livro removido
 tags:
   - name: Livros
+    description: Operações relacionadas a livros
+  - name: Autores
+    description: Operações relacionadas a autores
 components:
   schemas:
     Autor:
@@ -137,6 +229,13 @@ components:
       properties:
         id:
           type: integer
+        nome:
+          type: string
+    AutorInput:
+      type: object
+      required:
+        - nome
+      properties:
         nome:
           type: string
     Livro:
