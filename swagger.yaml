@@ -6,6 +6,160 @@ info:
 servers:
   - url: http://localhost:3000
 paths:
+  /usuarios:
+    get:
+      tags:
+        - Usuários
+      summary: Lista todos os usuários
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Usuario'
+    post:
+      tags:
+        - Usuários
+      summary: Cria um novo usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '201':
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+  /usuarios/{id}:
+    get:
+      tags:
+        - Usuários
+      summary: Obtém um usuário pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuário não encontrado
+    put:
+      tags:
+        - Usuários
+      summary: Atualiza um usuário
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuário não encontrado
+    delete:
+      tags:
+        - Usuários
+      summary: Remove um usuário
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Usuário removido
+  /emprestimos:
+    get:
+      tags:
+        - Empréstimos
+      summary: Lista todos os empréstimos
+      responses:
+        '200':
+          description: Lista de empréstimos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Emprestimo'
+    post:
+      tags:
+        - Empréstimos
+      summary: Cria um novo empréstimo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmprestimoInput'
+      responses:
+        '201':
+          description: Empréstimo criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Emprestimo'
+  /emprestimos/{id}:
+    get:
+      tags:
+        - Empréstimos
+      summary: Obtém um empréstimo pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Empréstimo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Emprestimo'
+        '404':
+          description: Empréstimo não encontrado
+  /emprestimos/{id}/devolucao:
+    put:
+      tags:
+        - Empréstimos
+      summary: Devolve um livro emprestado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Livro devolvido com sucesso
   /autores:
     get:
       tags:
@@ -224,6 +378,52 @@ tags:
     description: Operações relacionadas a autores
 components:
   schemas:
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+    UsuarioInput:
+      type: object
+      required:
+        - nome
+        - email
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+    Emprestimo:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario_id:
+          type: integer
+        livro_id:
+          type: integer
+        data_emprestimo:
+          type: string
+          format: date
+        data_devolucao:
+          type: string
+          format: date
+        devolvido:
+          type: boolean
+    EmprestimoInput:
+      type: object
+      required:
+        - usuario_id
+        - livro_id
+      properties:
+        usuario_id:
+          type: integer
+        livro_id:
+          type: integer
     Autor:
       type: object
       properties:
