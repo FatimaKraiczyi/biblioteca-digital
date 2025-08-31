@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Livro } from '../models/Livro';
-import sql from '../database';
-
+import pool from '../database';
+ 
 // Função utilitária para montar links HATEOAS
 function buildLinks(livro: Livro) {
   const links = [
@@ -40,8 +40,8 @@ export const listarLivros = async (req: Request, res: Response) => {
     query += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(Number(size), (Number(page) - 1) * Number(size));
 
-    const result = await sql.unsafe(query, params);
-    const livros = result.map((row: any) => ({
+    const result = await pool.query(query, params);
+    const livros = result.rows.map((row: any) => ({
       id: row.id,
       titulo: row.titulo,
       isbn: row.isbn,
@@ -74,11 +74,11 @@ export const listarLivros = async (req: Request, res: Response) => {
 export const obterLivro = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await sql`
-      SELECT l.id, l.titulo, l.isbn, l.ano_publicacao, l.disponivel, a.id as autor_id, a.nome as autor_nome
-      FROM livros l JOIN autores a ON l.autor_id = a.id WHERE l.id = ${id}
-    `;
-    if (result.length === 0) {
+    const result = await pool.query(
+      `SELECT l.id, l.titulo, l.isbn, l.ano_publicacao, l.disponivel, a.id as autor_id, a.nome as autor_nome
+       FROM livros l JOIN autores a ON l.autor_id = a.id WHERE l.id = $1`, [id]
+    );
+    if (result.rowCount === 0) {
       return res.status(404).json({
         erro: "Livro não encontrado",
         codigo: 404,
@@ -86,7 +86,7 @@ export const obterLivro = async (req: Request, res: Response) => {
         caminho: req.originalUrl
       });
     }
-    const row = result[0];
+    const row = result.rows[0];
     const livro = {
       id: row.id,
       titulo: row.titulo,
@@ -128,15 +128,15 @@ export const criarLivro = async (req: Request, res: Response) => {
         caminho: req.originalUrl
       });
     }
-    const result = await sql`
-      INSERT INTO livros (titulo, isbn, ano_publicacao, disponivel, autor_id)
-      VALUES (${titulo}, ${isbn}, ${ano_publicacao}, ${disponivel ?? true}, ${autor_id})
-      RETURNING id
-    `;
+    const result = await pool.query(
+      `INSERT INTO livros (titulo, isbn, ano_publicacao, disponivel, autor_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`, 
+      [titulo, isbn, ano_publicacao, disponivel ?? true, autor_id]
+    );
     res.status(201).json({
-      id: result[0].id,
+      id: result.rows[0].id,
       _links: [
-        { rel: "self", href: `/livros/${result[0].id}`, method: "GET" }
+        { rel: "self", href: `/livros/${result.rows[0].id}`, method: "GET" }
       ]
     });
   } catch (err) {
@@ -153,11 +153,11 @@ export const atualizarLivro = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { titulo, isbn, ano_publicacao, disponivel, autor_id } = req.body;
-    const result = await sql`
-      UPDATE livros SET titulo=${titulo}, isbn=${isbn}, ano_publicacao=${ano_publicacao}, disponivel=${disponivel}, autor_id=${autor_id}
-      WHERE id=${id} RETURNING *
-    `;
-    if (result.length === 0) {
+    const result = await pool.query(
+      `UPDATE livros SET titulo=$1, isbn=$2, ano_publicacao=$3, disponivel=$4, autor_id=$5 WHERE id=$6 RETURNING *`,
+      [titulo, isbn, ano_publicacao, disponivel, autor_id, id]
+    );
+    if (result.rowCount === 0) {
       return res.status(404).json({
         erro: "Livro não encontrado",
         codigo: 404,
@@ -184,10 +184,8 @@ export const atualizarLivro = async (req: Request, res: Response) => {
 export const removerLivro = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await sql`
-      DELETE FROM livros WHERE id=${id} RETURNING id
-    `;
-    if (result.length === 0) {
+    const result = await pool.query(`DELETE FROM livros WHERE id=$1`, [id]);
+    if (result.rowCount === 0) {
       return res.status(404).json({
         erro: "Livro não encontrado",
         codigo: 404,
