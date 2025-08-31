@@ -41,9 +41,17 @@ export const criarEmprestimo = async (req: Request, res: Response) => {
     if (!usuario_id || !livro_id) {
       return res.status(400).json({ erro: 'Usuário e livro são obrigatórios' });
     }
+    // Verifica se o usuário existe
+    const usuario = await pool.query('SELECT id FROM usuarios WHERE id = $1', [usuario_id]);
+    if (usuario.rowCount === 0) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
     // Verifica se o livro está disponível
     const livro = await pool.query('SELECT disponivel FROM livros WHERE id = $1', [livro_id]);
-    if (livro.rowCount === 0 || !livro.rows[0].disponivel) {
+    if (livro.rowCount === 0) {
+      return res.status(404).json({ erro: 'Livro não encontrado' });
+    }
+    if (!livro.rows[0].disponivel) {
       return res.status(400).json({ erro: 'Livro não disponível para empréstimo' });
     }
     // Cria o empréstimo
@@ -58,6 +66,9 @@ export const criarEmprestimo = async (req: Request, res: Response) => {
     console.error(err);
     if (err.code === '23502') {
       return res.status(400).json({ erro: 'Dados inválidos: algum campo obrigatório está nulo.', detalhe: err.detail });
+    }
+    if (err.code === '23503') {
+      return res.status(400).json({ erro: 'Violação de integridade referencial: usuário ou livro não existe.', detalhe: err.detail });
     }
     res.status(500).json({ erro: 'Erro ao criar empréstimo' });
   }

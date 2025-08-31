@@ -126,6 +126,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Emprestimo'
+        '400':
+          description: Dados inválidos, campos obrigatórios ausentes, livro não disponível ou violação de integridade referencial
+        '404':
+          description: Usuário ou livro não encontrado
+        '500':
+          description: Erro interno ao criar empréstimo
   /emprestimos/{id}:
     get:
       tags:
@@ -146,6 +152,8 @@ paths:
                 $ref: '#/components/schemas/Emprestimo'
         '404':
           description: Empréstimo não encontrado
+        '500':
+          description: Erro interno ao obter empréstimo
   /emprestimos/{id}/devolucao:
     put:
       tags:
@@ -160,6 +168,10 @@ paths:
       responses:
         '200':
           description: Livro devolvido com sucesso
+        '404':
+          description: Empréstimo não encontrado
+        '500':
+          description: Erro interno ao devolver empréstimo
   /autores:
     get:
       tags:
