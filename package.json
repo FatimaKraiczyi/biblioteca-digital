@@ -5,9 +5,15 @@
   "scripts": {
     "dev": "ts-node-dev src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "postinstall": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
+    "@types/cors": "^2.8.19",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "js-yaml": "^4.1.0",

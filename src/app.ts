@@ -7,20 +7,27 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import cors from 'cors';
 
 const app = express();
 
+// Configuração do CORS
+app.use(cors());
+
 app.use(express.json());
+
+// Swagger UI
+const swaggerFile = path.resolve(__dirname, '../swagger.yaml');
+const swaggerDocument = yaml.load(fs.readFileSync(swaggerFile, 'utf8')) as object;
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "API Biblioteca Digital"
+}));
 
 app.use('/livros', livroRoutes);
 app.use('/autores', autorRoutes);
 app.use('/usuarios', usuarioRoutes);
 app.use('/emprestimos', emprestimoRoutes);
-
-// Swagger UI
-const swaggerFile = path.resolve(__dirname, '../swagger.yaml');
-const swaggerDocument = yaml.load(fs.readFileSync(swaggerFile, 'utf8')) as object;
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use((req, res) => {
   res.status(404).json({

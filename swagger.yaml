@@ -4,10 +4,7 @@ info:
   version: 1.0.0
   description: API para consulta e gerenciamento de livros - Documentação
 servers:
-  - url: https://biblioteca-digital-production.up.railway.app
-    description: Servidor de Produção
-  - url: http://localhost:3000
-    description: Servidor Local
+  - url: /
 paths:
   /usuarios:
     get:
