@@ -1,10 +1,16 @@
 import { Request, Response } from 'express';
 import pool from '../database';
 
+import { buildAutorLinks } from '../utils/hateoas';
+
 export const listarAutores = async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT id, nome FROM autores ORDER BY nome ASC');
-    res.status(200).json(result.rows);
+    const autores = result.rows.map(autor => ({
+      ...autor,
+      _links: buildAutorLinks(autor)
+    }));
+    res.status(200).json(autores);
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao listar autores' });

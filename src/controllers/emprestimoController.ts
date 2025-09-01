@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import pool from '../database';
 
+import { buildEmprestimoLinks } from '../utils/hateoas';
+
 export const listarEmprestimos = async (req: Request, res: Response) => {
   try {
     const result = await pool.query(`SELECT e.id, e.data_emprestimo, e.data_devolucao, e.devolvido, \
@@ -9,7 +11,13 @@ export const listarEmprestimos = async (req: Request, res: Response) => {
       JOIN usuarios u ON e.usuario_id = u.id\
       JOIN livros l ON e.livro_id = l.id\
       ORDER BY e.data_emprestimo DESC`);
-    res.status(200).json(result.rows);
+    
+    const emprestimos = result.rows.map(emprestimo => ({
+      ...emprestimo,
+      _links: buildEmprestimoLinks(emprestimo)
+    }));
+    
+    res.status(200).json(emprestimos);
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao listar empréstimos' });

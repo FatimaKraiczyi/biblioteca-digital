@@ -1,10 +1,16 @@
 import { Request, Response } from 'express';
 import pool from '../database';
 
+import { buildUsuarioLinks } from '../utils/hateoas';
+
 export const listarUsuarios = async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT id, nome, email FROM usuarios ORDER BY nome ASC');
-    res.status(200).json(result.rows);
+    const usuarios = result.rows.map(usuario => ({
+      ...usuario,
+      _links: buildUsuarioLinks(usuario)
+    }));
+    res.status(200).json(usuarios);
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao listar usuários' });
